@@ -30,6 +30,7 @@ A lightweight Pomodoro timer application built with PyQt5, designed to help you 
 
 - Python 3.x
 - PyQt5 library
+- pyinstaller
 
 ### Setup
 
@@ -37,3 +38,4 @@ A lightweight Pomodoro timer application built with PyQt5, designed to help you 
    ```bash
    git clone https://github.com/mahmuudtolba/pomodoro-timer.git
    cd pomodoro-timer
+2. pyinstaller --onefile --windowed --icon=outer.png main.py
