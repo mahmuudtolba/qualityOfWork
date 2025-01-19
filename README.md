@@ -38,4 +38,6 @@ A lightweight Pomodoro timer application built with PyQt5, designed to help you 
    ```bash
    git clone https://github.com/mahmuudtolba/pomodoro-timer.git
    cd pomodoro-timer
-2. pyinstaller --onefile --windowed --icon=outer.png main.py
+   
+2. Convert to a desktop app  .exe
+   ```pyinstaller --onefile --windowed --icon=outer.png main.py```
