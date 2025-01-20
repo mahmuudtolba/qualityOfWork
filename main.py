@@ -1,10 +1,13 @@
 import sys
 import csv
 import os
+import webbrowser
 from datetime import datetime, timedelta
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
+import sweetviz as sv
+import pandas as pd
 
 
 class PomodoroApp(QMainWindow):
@@ -13,33 +16,43 @@ class PomodoroApp(QMainWindow):
         self.setWindowTitle("Pomodoro Timer")
 
         # Make the window smaller
-        self.resize(150, 100)
+        self.resize(300, 120)
 
         # Set a custom icon
-        self.setWindowIcon(QIcon("inner.png"))  # Replace "icon.png" with the path to your icon file
+        self.setWindowIcon(QIcon("inner.png"))  # Replace "inner.png" with your icon file path
 
         # Keep the window on top
         self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
         # Timer and state variables
-        self.total_time = 50 * 60  # 25 minutes in seconds
+        self.total_time = 50 * 60  # 50 minutes in seconds
         self.time_left = self.total_time
         self.distractions = 0
         self.timer_running = False
         self.start_time = None  # To track session start time
 
-        # Layout
+        # Main Layout
         self.layout = QVBoxLayout()
+
+        # Timer and Analysis Button Layout
+        timer_analysis_layout = QHBoxLayout()
 
         # Timer Label
         self.timer_label = QLabel(self.format_time(self.time_left), self)
         self.timer_label.setStyleSheet("font-size: 24px;")  # Adjust font size for a smaller window
         self.timer_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.timer_label)
+        timer_analysis_layout.addWidget(self.timer_label)
+
+        # Analysis Button
+        self.analysis_button = QPushButton("Analysis")
+        self.analysis_button.clicked.connect(self.generate_analysis)
+        timer_analysis_layout.addWidget(self.analysis_button)
+
+        self.layout.addLayout(timer_analysis_layout)
 
         # Distraction Label
         self.distraction_label = QLabel("Distracted: 0", self)
-        self.distraction_label.setStyleSheet("font-size: 16px;")  # Adjust font size for a smaller window
+        self.distraction_label.setStyleSheet("font-size: 16px;")
         self.distraction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.distraction_label)
 
@@ -98,7 +111,7 @@ class PomodoroApp(QMainWindow):
     def start_timer(self):
         """Start the timer."""
         if not self.timer_running:
-            if self.start_time is None:  # Record session start time only once
+            if self.start_time is None:
                 self.start_time = datetime.now()
             self.timer.start(1000)  # Tick every 1 second
             self.timer_running = True
@@ -108,20 +121,15 @@ class PomodoroApp(QMainWindow):
         self.timer.stop()
         self.timer_running = False
 
-    def reset_timer(self , save = True):
+    def reset_timer(self, save=True):
         """Reset the timer and save session data to CSV."""
-        # Save the session to CSV
-        if save :
+        if save:
             self.save_session_to_csv()
-
-        # Reset variables
         self.timer.stop()
         self.time_left = self.total_time
         self.distractions = 0
         self.timer_running = False
         self.start_time = None
-
-        # Update labels
         self.timer_label.setText(self.format_time(self.time_left))
         self.distraction_label.setText("Distracted: 0")
 
@@ -133,9 +141,8 @@ class PomodoroApp(QMainWindow):
         else:
             self.timer.stop()
             self.timer_running = False
-            # Save the session when the time runs out
             self.save_session_to_csv()
-            self.reset_timer(save = False)
+            self.reset_timer(save=False)
 
     def add_distraction(self, increment):
         """Add a distraction count."""
@@ -145,29 +152,36 @@ class PomodoroApp(QMainWindow):
     def save_session_to_csv(self):
         """Save the current session data to a CSV file."""
         if self.start_time is None:
-            return  # No session to save if timer wasn't started
-
+            return
         now = datetime.now()
         session_length = now - self.start_time
-
-        # Format session length as HH:MM:SS
         session_length_str = str(timedelta(seconds=session_length.seconds))
-
         with open(self.csv_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([
-                self.start_time.strftime("%Y-%m-%d"),      # Date
-                self.start_time.strftime("%H:%M:%S"),      # Start Time
-                now.strftime("%H:%M:%S"),                  # End Time
-                session_length_str,                        # Session Length
-                self.distractions                          # Distractions
+                self.start_time.strftime("%Y-%m-%d"),
+                self.start_time.strftime("%H:%M:%S"),
+                now.strftime("%H:%M:%S"),
+                session_length_str,
+                self.distractions
             ])
+
+    def generate_analysis(self):
+        """Generate and display a Sweetviz report for the CSV file."""
+        if os.path.exists(self.csv_file):
+            df = pd.read_csv(self.csv_file)
+            report = sv.analyze(df)
+            report_file = "analysis.html"
+            report.show_html(report_file, open_browser=False , layout='widescreen')
+            webbrowser.open(report_file)
+        else:
+            print("CSV file not found!")
 
     def closeEvent(self, event):
         """Handle app close event to save session data."""
-        if self.start_time:  # Only save if the timer was started
+        if self.start_time:
             self.save_session_to_csv()
-        event.accept()  # Accept the close event
+        event.accept()
 
     @staticmethod
     def format_time(seconds):
