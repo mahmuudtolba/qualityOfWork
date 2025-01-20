@@ -1,4 +1,5 @@
 
+./pomodoro_sessions.csv
 build
 dist
 main.spec
