@@ -14,6 +14,7 @@ import subprocess
 class PomodoroApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.streamlit_process= None
         self.setWindowTitle("Pomodoro Timer")
 
         # Make the window smaller
@@ -172,19 +173,30 @@ class PomodoroApp(QMainWindow):
 
 
     def generate_analysis(self):
-        """Launch the Streamlit analysis app without blocking."""
+        """Launch the Streamlit analysis app."""
         try:
-            # Run Streamlit in a separate process so it doesn't block the main app
-            subprocess.Popen(["streamlit", "run", "streamlit_analysis.py"])
+            # Locate the streamlit_analysis.py file in the bundled application
+            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+            streamlit_script = os.path.join(base_path, "streamlit_analysis.py")
+
+            # Run Streamlit app
+            self.streamlit_process = subprocess.Popen(["streamlit", "run", streamlit_script])
+
         except Exception as e:
             print(f"Error launching Streamlit app: {e}")
+
+
 
 
     
 
 
     def closeEvent(self, event):
-        """Handle app close event to save session data."""
+        """Handle app close event to save session data and close the server."""
+
+        if self.streamlit_process :
+            self.streamlit_process.terminate()
+
         if self.start_time:
             self.save_session_to_csv()
         event.accept()
