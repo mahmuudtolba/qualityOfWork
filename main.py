@@ -8,6 +8,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
 import sweetviz as sv
 import pandas as pd
+import subprocess
 
 
 class PomodoroApp(QMainWindow):
@@ -16,7 +17,7 @@ class PomodoroApp(QMainWindow):
         self.setWindowTitle("Pomodoro Timer")
 
         # Make the window smaller
-        self.resize(300, 120)
+        self.resize(150, 100)
 
         # Set a custom icon
         self.setWindowIcon(QIcon("inner.png"))  # Replace "inner.png" with your icon file path
@@ -46,6 +47,9 @@ class PomodoroApp(QMainWindow):
         # Analysis Button
         self.analysis_button = QPushButton("Analysis")
         self.analysis_button.clicked.connect(self.generate_analysis)
+
+
+
         timer_analysis_layout.addWidget(self.analysis_button)
 
         self.layout.addLayout(timer_analysis_layout)
@@ -166,16 +170,18 @@ class PomodoroApp(QMainWindow):
                 self.distractions
             ])
 
+
     def generate_analysis(self):
-        """Generate and display a Sweetviz report for the CSV file."""
-        if os.path.exists(self.csv_file):
-            df = pd.read_csv(self.csv_file)
-            report = sv.analyze(df)
-            report_file = "analysis.html"
-            report.show_html(report_file, open_browser=False , layout='widescreen')
-            webbrowser.open(report_file)
-        else:
-            print("CSV file not found!")
+        """Launch the Streamlit analysis app without blocking."""
+        try:
+            # Run Streamlit in a separate process so it doesn't block the main app
+            subprocess.Popen(["streamlit", "run", "streamlit_analysis.py"])
+        except Exception as e:
+            print(f"Error launching Streamlit app: {e}")
+
+
+    
+
 
     def closeEvent(self, event):
         """Handle app close event to save session data."""
