@@ -9,6 +9,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBo
 import sweetviz as sv
 import pandas as pd
 import subprocess
+from PyQt5.QtCore import QPropertyAnimation, QEasingCurve
+from PyQt5.QtWidgets import QGraphicsOpacityEffect
+from PyQt5.QtWidgets import QSystemTrayIcon, QMenu
+from PyQt5.QtGui import QIcon
+from PyQt5.QtMultimedia import QSound
 
 
 class PomodoroApp(QMainWindow):
@@ -106,6 +111,32 @@ class PomodoroApp(QMainWindow):
         self.csv_file = "pomodoro_sessions.csv"
         self.initialize_csv()
 
+        self.opacity_effect = QGraphicsOpacityEffect(self.timer_label)
+        self.timer_label.setGraphicsEffect(self.opacity_effect)
+
+
+        self.start_button_animation = QPropertyAnimation(self.start_button, b"geometry")
+        self.start_button_animation.setDuration(200)  # 0.5 seconds
+        self.start_button_animation.setEasingCurve(QEasingCurve.OutInCubic)
+
+        # Connect button click to animation
+        self.start_button.clicked.connect(self.animate_start_button)
+
+        # System tray icon
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon("break.PNG"))  # Replace with your icon
+        self.tray_icon.show()
+
+
+        
+    def animate_start_button(self):
+        # Scale the button slightly when clicked
+        self.start_button_animation.setStartValue(self.start_button.geometry())
+        self.start_button_animation.setEndValue(self.start_button.geometry().adjusted(-5, -5, 5, 5))  # Scale by 5 pixels
+        self.start_button_animation.start()
+
+        
+
     def initialize_csv(self):
         """Initialize the CSV file if it doesn't exist."""
         if not os.path.exists(self.csv_file):
@@ -115,11 +146,13 @@ class PomodoroApp(QMainWindow):
 
     def start_timer(self):
         """Start the timer."""
+
         if not self.timer_running:
             if self.start_time is None:
                 self.start_time = datetime.now()
             self.timer.start(1000)  # Tick every 1 second
             self.timer_running = True
+
 
     def pause_timer(self):
         """Pause the timer."""
@@ -130,6 +163,7 @@ class PomodoroApp(QMainWindow):
         """Reset the timer and save session data to CSV."""
         if save:
             self.save_session_to_csv()
+
         self.timer.stop()
         self.time_left = self.total_time
         self.distractions = 0
@@ -138,8 +172,8 @@ class PomodoroApp(QMainWindow):
         self.timer_label.setText(self.format_time(self.time_left))
         self.distraction_label.setText("Distracted: 0")
 
+
     def update_timer(self):
-        """Update the timer every second."""
         if self.time_left > 0:
             self.time_left -= 1
             self.timer_label.setText(self.format_time(self.time_left))
@@ -148,6 +182,10 @@ class PomodoroApp(QMainWindow):
             self.timer_running = False
             self.save_session_to_csv()
             self.reset_timer(save=False)
+            self.tray_icon.showMessage("Pomodoro Timer", "Time's up! Take a break.", QSystemTrayIcon.Information, 3000)
+
+
+            
 
     def add_distraction(self, increment):
         """Add a distraction count."""
@@ -170,6 +208,7 @@ class PomodoroApp(QMainWindow):
                 session_length_str,
                 self.distractions
             ])
+
 
 
     def generate_analysis(self):

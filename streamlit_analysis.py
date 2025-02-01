@@ -68,7 +68,6 @@ if os.path.exists(csv_file):
     # 4. bar Plot: Day vs Distractions
     st.subheader("4. Distractions by Day")
     days_to_show_4 = st.slider("Select number of days to display", min_value=1, max_value=len(data), value=30)    
-    print(data[-days_to_show_4:])
     distractions_by_day = data.groupby("Day")["minute_per_distractions"].mean()[-days_to_show_4:]
     fig, ax = plt.subplots()
     sns.barplot(x = distractions_by_day.index,y =  distractions_by_day, alpha=0.7 ,ax =ax)
