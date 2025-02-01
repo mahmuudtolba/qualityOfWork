@@ -12,6 +12,7 @@ csv_file = 'pomodoro_sessions.csv'
 if os.path.exists(csv_file):
     # Load the CSV data into a DataFrame
     data = pd.read_csv(csv_file)
+    data.sort_values(by=['Date'] , inplace=True )
 
     # Convert session length to minutes and session start time to datetime
     def session_length_to_minutes(length):
@@ -23,19 +24,20 @@ if os.path.exists(csv_file):
     # Extract hour and day from Start Time
     data["Hour"] = pd.to_datetime(data["Start Time"], format="%H:%M:%S").dt.hour
     data["Day"] = pd.to_datetime(data["Date"]).dt.date
+    data['minute_per_distractions'] = data["Session Length (minutes)"] / data["Distractions"]
+    data['minute_per_distractions'] = np.floor(data['minute_per_distractions'].replace([np.inf, -np.inf], 0)).astype(int)
+    minute_per_distractions = data['minute_per_distractions']
 
-    minute_per_distractions = data["Session Length (minutes)"] / data["Distractions"]
-    minute_per_distractions = np.floor(minute_per_distractions.replace([np.inf, -np.inf], 0)).astype(int)
     # Streamlit App
     st.title("Pomodoro Session Analysis")
     st.write("Analyze the relationship between session length, distractions, and time.")
 
      # 1. bar Plot: Hours vs Days
     st.subheader("1. Time Of Study")
-    days_to_show_4 = st.slider("Select number of days to display ", min_value=1, max_value=len(data), value=30)
-    last_n_days_4 = data[-days_to_show_4:]
+    days_to_show_1 = st.slider("Select number of days to display ", min_value=1, max_value=len(data), value=30)
+    last_n_days_1 = data
+    hours_per_day = (last_n_days_1.groupby("Day")["Session Length (minutes)"].sum() / 60)[-days_to_show_1:]
 
-    hours_per_day = last_n_days_4.groupby("Day")["Session Length (minutes)"].sum() / 60
     fig, ax = plt.subplots()
     hours_per_day.plot(kind="bar",  ax=ax)
     ax.set_title("Hours of study per Day")
@@ -65,14 +67,9 @@ if os.path.exists(csv_file):
     
     # 4. bar Plot: Day vs Distractions
     st.subheader("4. Distractions by Day")
-    days_to_show_3 = st.slider("Select number of days to display", min_value=1, max_value=len(data), value=30)
-
-    sub_data = data.sort_values(by=['Date'] ).copy()
-    last_n_days_3 = sub_data[-days_to_show_3:]
-    
-    last_n_days_3['minute_per_distractions'] = last_n_days_3["Session Length (minutes)"] / last_n_days_3["Distractions"]
-    last_n_days_3['minute_per_distractions'] = np.floor(last_n_days_3['minute_per_distractions'].replace([np.inf, -np.inf], 0)).astype(int)
-    distractions_by_day = last_n_days_3.groupby("Day")["minute_per_distractions"].mean()
+    days_to_show_4 = st.slider("Select number of days to display", min_value=1, max_value=len(data), value=30)    
+    print(data[-days_to_show_4:])
+    distractions_by_day = data.groupby("Day")["minute_per_distractions"].mean()[-days_to_show_4:]
     fig, ax = plt.subplots()
     sns.barplot(x = distractions_by_day.index,y =  distractions_by_day, alpha=0.7 ,ax =ax)
     ax.set_title("Minutes pass before each distraction by Day ")
