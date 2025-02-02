@@ -37,9 +37,20 @@ if os.path.exists(csv_file):
     days_to_show_1 = st.slider("Select number of days to display ", min_value=1, max_value=len(data), value=30)
     last_n_days_1 = data
     hours_per_day = (last_n_days_1.groupby("Day")["Session Length (minutes)"].sum() / 60)[-days_to_show_1:]
-
+    hours_per_day.index = pd.to_datetime(hours_per_day.index).strftime('%d-%b')
     fig, ax = plt.subplots()
-    hours_per_day.plot(kind="bar",  ax=ax)
+    hours_vs_days= sns.barplot(hours_per_day,  ax=ax)
+    hours_vs_days.axhline( y = 10 ,  color = 'red')
+    hours_vs_days.text(
+            x=len(hours_per_day) // 2,  # Position text in the middle of the x-axis
+            y=9.2,                       # Position text at y = 10
+            s="اﺮَﺒَﺻ ﻦَﻣﻭ ﻰﻓﻭﺃ ﻦَﻣ َﺪﺠﻤﻟﺍ َﻖﻧﺎﻋﻭ ... ﻢﻫُﺮﺜﻛﺃ َّﻞﻣ ﻰﺘﺣ ﺪﺠﻤﻟﺍ اﻭﺪﺑﺎﻛ",  # Text to display
+            color='red',                # Text color
+            ha='center',                # Horizontal alignment
+            va='bottom',                # Vertical alignment
+            fontsize=12,
+            fontfamily='Arial' 
+        )
     ax.set_title("Hours of study per Day")
     ax.set_xlabel("Days")
     ax.set_ylabel("Total Hours")
@@ -58,7 +69,8 @@ if os.path.exists(csv_file):
     st.subheader("3. Distractions over Hours per Day")
     distractions_by_hour = data.groupby("Hour")["Distractions"].mean()
     fig, ax = plt.subplots()
-    distractions_by_hour.plot(kind="line",  ax=ax)
+    distractions_vs_hours = distractions_by_hour.plot(kind="line",  ax=ax)
+    distractions_vs_hours.axhline(y = 5 , color = 'red')
     ax.set_title("Mean Distractions by Hour of the Day")
     ax.set_xlabel("Hour of Day")
     ax.set_ylabel("Total Distractions")
@@ -69,12 +81,12 @@ if os.path.exists(csv_file):
     st.subheader("4. Distractions by Day")
     days_to_show_4 = st.slider("Select number of days to display", min_value=1, max_value=len(data), value=30)    
     distractions_by_day = data.groupby("Day")["minute_per_distractions"].mean()[-days_to_show_4:]
+    distractions_by_day.index = pd.to_datetime(distractions_by_day.index).strftime('%d-%b')
     fig, ax = plt.subplots()
     sns.barplot(x = distractions_by_day.index,y =  distractions_by_day, alpha=0.7 ,ax =ax)
-    ax.set_title("Minutes pass before each distraction by Day ")
+    ax.set_title("Minutes pass before distraction by Day ")
     ax.set_xlabel("Days")
     ax.set_ylabel("Distractions")
-    plt.xticks(rotation=90)
     st.pyplot(fig)
 
     
